@@ -64,15 +64,17 @@ Puppet::Type.type(:mongodb_user).provide(:mongodb, :parent => Puppet::Provider::
 
       mongo_eval("db.addUser(#{user.to_json})", @resource[:database])
     else
-      cmd = {
-        :createUser => @resource[:username],
-        :pwd => @resource[:password_hash],
-        :customData => { :createdBy => "Puppet Mongodb_user['#{@resource[:name]}']" },
-        :roles => @resource[:roles],
-        :digestPassword => false,
+      cmd_json=<<-EOS.gsub(/$\n/, '')
+      {
+        "createUser": "#{@resource[:username]}",
+        "pwd": "#{@resource[:password_hash]}",
+        "customData": {"createdBy": "Puppet Mongodb_user['#{@resource[:name]}']"},
+        "roles": #{@resource[:roles].to_json},
+        "digestPassword": false
       }
+      EOS
 
-      mongo_eval("db.runCommand(#{cmd.to_json})", @resource[:database])
+      mongo_eval("db.runCommand(#{cmd_json})", @resource[:database])
     end
 
     @property_hash[:ensure] = :present
